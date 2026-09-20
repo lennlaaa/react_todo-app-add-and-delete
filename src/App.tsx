@@ -10,10 +10,25 @@ import { USER_ID, getTodos, addTodo, deleteTodo } from './api/todos';
 
 import { Todo } from './types/Todo';
 
+import classNames from 'classnames';
+
+enum Filter {
+  All = 'all',
+  Active = 'active',
+  Completed = 'completed',
+}
+
+enum Error {
+  EmptyTitle = 'Title should not be empty',
+  AddTodo = 'Unable to add a todo',
+  DeleteTodo = 'Unable to delete a todo',
+  LoadTodos = 'Unable to load todos',
+}
+
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState(Filter.All);
   const [newTodo, setNewTodo] = useState('');
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -25,7 +40,7 @@ export const App: React.FC = () => {
     event.preventDefault();
 
     if (!newTodo.trim()) {
-      setError('Title should not be empty');
+      setError(Error.EmptyTitle);
 
       setTimeout(() => {
         setError('');
@@ -57,7 +72,7 @@ export const App: React.FC = () => {
         setIsAdding(false);
       })
       .catch(() => {
-        setError('Unable to add a todo');
+        setError(Error.AddTodo);
         setTempTodo(null);
         setIsAdding(false);
 
@@ -80,7 +95,7 @@ export const App: React.FC = () => {
         inputRef.current?.focus();
       })
       .catch(() => {
-        setError('Unable to delete a todo');
+        setError(Error.DeleteTodo);
         setDeletingTodoId(null);
 
         setTimeout(() => {
@@ -103,7 +118,7 @@ export const App: React.FC = () => {
         });
 
         if (results.some(result => result.status === 'rejected')) {
-          setError('Unable to delete a todo');
+          setError(Error.LoadTodos);
 
           setTimeout(() => {
             setError('');
@@ -149,11 +164,29 @@ export const App: React.FC = () => {
 
   let visibleTodos = todos;
 
-  if (filter === 'active') {
+  const filters = [
+    {
+      status: Filter.All,
+      label: 'All',
+      dataCy: 'FilterLinkAll',
+    },
+    {
+      status: Filter.Active,
+      label: 'Active',
+      dataCy: 'FilterLinkActive',
+    },
+    {
+      status: Filter.Completed,
+      label: 'Completed',
+      dataCy: 'FilterLinkCompleted',
+    },
+  ];
+
+  if (filter === Filter.Active) {
     visibleTodos = todos.filter(todo => !todo.completed);
   }
 
-  if (filter === 'completed') {
+  if (filter === Filter.Completed) {
     visibleTodos = todos.filter(todo => todo.completed);
   }
 
@@ -220,9 +253,9 @@ export const App: React.FC = () => {
 
                 <div
                   data-cy="TodoLoader"
-                  className={`modal overlay ${
-                    deletingTodoId === todo.id ? 'is-active' : ''
-                  }`}
+                  className={classNames('modal overlay', {
+                    'is-active': deletingTodoId === todo.id,
+                  })}
                 >
                   <div className="modal-background has-background-white-ter" />
                   <div className="loader" />
@@ -270,45 +303,22 @@ export const App: React.FC = () => {
             </span>
 
             <nav className="filter" data-cy="Filter">
-              <a
-                href="#/"
-                className={`filter__link ${filter === 'all' ? 'selected' : ''}`}
-                data-cy="FilterLinkAll"
-                onClick={event => {
-                  event.preventDefault();
-                  setFilter('all');
-                }}
-              >
-                All
-              </a>
-
-              <a
-                href="#/active"
-                className={`filter__link ${
-                  filter === 'active' ? 'selected' : ''
-                }`}
-                data-cy="FilterLinkActive"
-                onClick={event => {
-                  event.preventDefault();
-                  setFilter('active');
-                }}
-              >
-                Active
-              </a>
-
-              <a
-                href="#/completed"
-                className={`filter__link ${
-                  filter === 'completed' ? 'selected' : ''
-                }`}
-                data-cy="FilterLinkCompleted"
-                onClick={event => {
-                  event.preventDefault();
-                  setFilter('completed');
-                }}
-              >
-                Completed
-              </a>
+              {filters.map(filterItem => (
+                <a
+                  key={filterItem.status}
+                  href="#/"
+                  className={classNames('filter__link', {
+                    selected: filter === filterItem.status,
+                  })}
+                  data-cy={filterItem.dataCy}
+                  onClick={event => {
+                    event.preventDefault();
+                    setFilter(filterItem.status);
+                  }}
+                >
+                  {filterItem.label}
+                </a>
+              ))}
             </nav>
 
             <button
