@@ -118,7 +118,7 @@ export const App: React.FC = () => {
         });
 
         if (results.some(result => result.status === 'rejected')) {
-          setError(Error.LoadTodos);
+          setError(Error.DeleteTodo);
 
           setTimeout(() => {
             setError('');
